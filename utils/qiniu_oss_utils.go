@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/qiniu/go-sdk/v7/auth"
 	"github.com/qiniu/go-sdk/v7/storage"
 	"log"
 	"math/rand"
 	"strconv"
-	"time"
 )
 
 const (
@@ -56,7 +56,7 @@ func Test() {
 
 // 流文件上传
 
-func FileUpload(stream []byte) (hash string, err error) {
+func OssFileUpload(stream []byte) (hash string, err error) {
 	putPolicy := storage.PutPolicy{
 		Scope: bucket,
 	}
@@ -77,14 +77,13 @@ func FileUpload(stream []byte) (hash string, err error) {
 		},
 	}
 
-	//data := []byte("hello, this is qiniu cloud")
 	dataLen := int64(len(stream))
 
-	err = formUploader.Put(context.Background(), &ret, upToken, time.Now().String(), bytes.NewReader(stream), dataLen, &putExtra)
+	err = formUploader.Put(context.Background(), &ret, upToken, uuid.New().String(), bytes.NewReader(stream), dataLen, &putExtra)
 	if err != nil {
-		log.Println("ssss ", err)
+		log.Println("OssFileUpload Fail", err)
 		return
 	}
-	fmt.Println(ret.Key, ret.Hash)
-	return hash, nil
+	log.Println(ret.Key, ret.Hash)
+	return ret.Hash, nil
 }

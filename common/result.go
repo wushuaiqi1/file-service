@@ -8,10 +8,15 @@ type Result struct {
 	Data    interface{} `json:"data"`
 }
 
+type Fail struct {
+	Code int
+	Msg  string
+}
+
 func OfSuccess(data any) Result {
 	return Result{200, "success", data}
 }
 
-func OfFail(code int, msg string) Result {
-	return Result{code, msg, nil}
+func OfFail(fail Fail) Result {
+	return Result{fail.Code, fail.Msg, nil}
 }
