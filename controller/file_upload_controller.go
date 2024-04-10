@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"file-service/common"
 	"file-service/repository"
 	"file-service/utils"
@@ -46,16 +47,35 @@ func (f FileUploadController) FileUpload(context *gin.Context) {
 		//TODO return和context.Next()效果一样？
 		return
 	}
-	all, err := io.ReadAll(open)
-	hash, err := utils.OssFileUpload(all)
-	if err != nil {
-		log.Println("Upload Oss File", err)
-		fileModel.Status = 2
+	context.JSON(http.StatusOK, common.OfSuccess("上传中"))
+	go func() {
+		data := map[string]any{
+			"FileId": fileModel.Id,
+			"UserId": fileModel.UserId,
+		}
+		all, err := io.ReadAll(open)
+		hash, err := utils.OssFileUpload(all)
+		if err != nil {
+			log.Println("Upload Oss File", err)
+			fileModel.Status = 2
+			f.FileRepository.Updates(fileModel)
+			data["Message"] = "上传失败,失败原因:" + err.Error()
+			marshal, err := json.Marshal(data)
+			if err != nil {
+				return
+			}
+			utils.SendSync(common.TopicFileUploadNotice, marshal)
+			return
+		}
+		//更新为上传成功的状态
+		fileModel.Status = 3
+		fileModel.Hash = hash
 		f.FileRepository.Updates(fileModel)
-		return
-	}
-	fileModel.Status = 3
-	fileModel.Hash = hash
-	f.FileRepository.Updates(fileModel)
-	context.JSON(http.StatusOK, common.OfSuccess(nil))
+		data["Message"] = "上传成功"
+		marshal, err := json.Marshal(data)
+		if err != nil {
+			return
+		}
+		utils.SendSync(common.TopicFileUploadNotice, marshal)
+	}()
 }

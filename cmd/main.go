@@ -3,7 +3,6 @@ package main
 import (
 	"file-service/common"
 	"file-service/routers"
-	"file-service/utils"
 	"log"
 )
 
@@ -25,8 +24,6 @@ func webServiceStart() {
 		log.Println("InitRocketMQ Error...", err)
 		return
 	}
-
-	utils.SendSync(common.TopicFileUploadNotice, []byte("sss"))
 
 	//初始化路由配置
 	engine := routers.InitRouters()
