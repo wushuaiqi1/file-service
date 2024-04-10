@@ -3,6 +3,7 @@ package main
 import (
 	"file-service/common"
 	"file-service/routers"
+	"file-service/utils"
 	"log"
 )
 
@@ -25,12 +26,13 @@ func webServiceStart() {
 		return
 	}
 
+	utils.SendSync(common.TopicFileUploadNotice, []byte("sss"))
+
 	//初始化路由配置
 	engine := routers.InitRouters()
-	err = engine.Run()
+	err = engine.Run("127.0.0.1:9090")
 	if err != nil {
 		log.Println("Gin Web Serve Start Fail,", err)
 		return
 	}
-	log.Println("Gin Web Serve Start Success...")
 }

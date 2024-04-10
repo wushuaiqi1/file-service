@@ -22,3 +22,5 @@ func InitRocketMQ() error {
 	Producer = &p
 	return nil
 }
+
+const TopicFileUploadNotice string = "FileUploadNotice"
