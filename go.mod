@@ -1,5 +1,7 @@
+//模块路径不要使用大写
 module file-service
 
+//Go最小的兼容版本
 go 1.20
 
 // 导入失败请设置go代理
