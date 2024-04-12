@@ -38,6 +38,10 @@ func (f FileUploadController) FileUpload(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, common.OfFail(systemFail))
 		return
 	}
+	if file.Size > 8<<20 {
+		context.JSON(http.StatusBadRequest, common.OfFail(common.Fail{Code: 10002, Msg: "文件过大"}))
+		return
+	}
 	log.Println("FileUpload req:", file.Filename)
 	fileModel := f.FileRepository.Create(file.Filename, 1)
 	open, err := file.Open()
