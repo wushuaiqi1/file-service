@@ -20,3 +20,8 @@ func OfSuccess(data any) Result {
 func OfFail(fail Fail) Result {
 	return Result{fail.Code, fail.Msg, nil}
 }
+
+var SystemFail = Fail{10001, "系统繁忙"}
+var UploadedFail = Fail{10002, "已上传，请勿重复操作"}
+var MissingParam = Fail{10003, "缺少必要参数"}
+var BodySizeLimit = Fail{10004, "文件过大，上传文件请小于8MB"}

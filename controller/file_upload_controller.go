@@ -4,54 +4,54 @@ import (
 	"encoding/json"
 	"file-service/common"
 	"file-service/repository"
+	"file-service/service"
 	"file-service/utils"
 	"github.com/gin-gonic/gin"
 	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 )
 
 type IFileUploadController interface {
-	FileUpload(context *gin.Context)
+	FileUpload(ctx *gin.Context)
+	FileUploadLock(ctx *gin.Context)
 }
 
+// FileUploadController 引入对应接口，而不是具体实现
 type FileUploadController struct {
-	UserRepository repository.IUserRepository
-	FileRepository repository.IFileRepository
+	FileRepository    repository.IFileRepository
+	FileUploadService service.IFileUploadService
 }
 
 func NewFileUploadController() IFileUploadController {
 	return FileUploadController{
-		repository.NewUserRepository(),
 		repository.NewFileRepository(),
+		service.NewFileUploadService(),
 	}
 }
 
-func (f FileUploadController) FileUpload(context *gin.Context) {
-	systemFail := common.Fail{
-		Code: 10001,
-		Msg:  "系统繁忙",
-	}
-	file, err := context.FormFile("file")
-	if err != nil {
-		log.Println("FileUpload Error:", err)
-		context.JSON(http.StatusInternalServerError, common.OfFail(systemFail))
+func (f FileUploadController) FileUploadLock(ctx *gin.Context) {
+	userId, file, ok := fileUploadReqParamsCheck(ctx)
+	if !ok {
 		return
 	}
-	if file.Size > 8<<20 {
-		context.JSON(http.StatusBadRequest, common.OfFail(common.Fail{Code: 10002, Msg: "文件过大"}))
+	f.FileUploadService.FileUpload(ctx, file, userId)
+}
+
+func (f FileUploadController) FileUpload(ctx *gin.Context) {
+	_, file, ok := fileUploadReqParamsCheck(ctx)
+	if !ok {
 		return
 	}
-	log.Println("FileUpload req:", file.Filename)
 	fileModel := f.FileRepository.Create(file.Filename, 1)
 	open, err := file.Open()
 	if err != nil {
 		log.Println("Open File Fail", err)
-		context.JSON(http.StatusInternalServerError, common.OfFail(systemFail))
-		//TODO return和context.Next()效果一样？
+		ctx.JSON(http.StatusInternalServerError, common.OfFail(common.SystemFail))
 		return
 	}
-	context.JSON(http.StatusOK, common.OfSuccess("上传中"))
+	ctx.JSON(http.StatusOK, common.OfSuccess("上传中"))
 	go func() {
 		data := map[string]any{
 			"FileId": fileModel.Id,
@@ -82,4 +82,19 @@ func (f FileUploadController) FileUpload(context *gin.Context) {
 		}
 		utils.SendSync(common.TopicFileUploadNotice, marshal)
 	}()
+}
+
+// FileUploadReqParamsCheck 文件上传请求前置校验
+func fileUploadReqParamsCheck(ctx *gin.Context) (userId string, file *multipart.FileHeader, ok bool) {
+	userId = ctx.PostForm("userId")
+	file, err := ctx.FormFile("file")
+	if userId == "" || err != nil {
+		ctx.JSON(http.StatusOK, common.OfFail(common.MissingParam))
+		return "", nil, ok
+	}
+	if file.Size > 8<<20 {
+		ctx.JSON(http.StatusBadRequest, common.OfFail(common.BodySizeLimit))
+		return "", nil, ok
+	}
+	return userId, file, true
 }
