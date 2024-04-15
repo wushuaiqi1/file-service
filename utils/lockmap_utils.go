@@ -17,7 +17,7 @@ func GetLock(key string) bool {
 }
 
 // GetLockAndExpire 获取锁并设置锁失效时间
-func GetLockAndExpire(key string, duration time.Duration) bool {
+func GetLockAndExpire(key string, expireTime time.Duration) bool {
 	getLockRes := GetLock(key)
 	if !getLockRes {
 		log.Println("获取锁失败，key:", key)
@@ -25,7 +25,7 @@ func GetLockAndExpire(key string, duration time.Duration) bool {
 	}
 	log.Println("获取锁成功，key:", key)
 	go func() {
-		time.Sleep(duration)
+		time.Sleep(expireTime)
 		UnLock(key)
 	}()
 	return true

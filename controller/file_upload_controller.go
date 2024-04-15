@@ -32,11 +32,11 @@ func NewFileUploadController() IFileUploadController {
 }
 
 func (f FileUploadController) FileUploadLock(ctx *gin.Context) {
-	userId, file, ok := fileUploadReqParamsCheck(ctx)
+	lock, file, ok := fileUploadReqParamsCheck(ctx)
 	if !ok {
 		return
 	}
-	f.FileUploadService.FileUpload(ctx, file, userId)
+	f.FileUploadService.FileUpload(ctx, file, lock)
 }
 
 func (f FileUploadController) FileUpload(ctx *gin.Context) {
@@ -96,5 +96,5 @@ func fileUploadReqParamsCheck(ctx *gin.Context) (userId string, file *multipart.
 		ctx.JSON(http.StatusBadRequest, common.OfFail(common.BodySizeLimit))
 		return "", nil, ok
 	}
-	return userId, file, true
+	return "lock:user:" + userId, file, true
 }

@@ -18,6 +18,11 @@ func webServiceStart() {
 		log.Println("InitDatabase Error...", err)
 		return
 	}
+	err = common.InitRedis()
+	if err != nil {
+		log.Println("Redis Service Not Health:", err)
+		return
+	}
 
 	//初始化MQ
 	err = common.InitRocketMQ()

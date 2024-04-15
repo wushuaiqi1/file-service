@@ -6,6 +6,7 @@ import (
 	"file-service/repository"
 	"file-service/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"io"
 	"log"
 	"mime/multipart"
@@ -38,7 +39,8 @@ func NewFileUploadService() IFileUploadService {
 // FileUpload 文件上传方法
 func (f FileUploadService) FileUpload(ctx *gin.Context, file *multipart.FileHeader, lock string) {
 	//获取单机锁并设置失效时间
-	locked := utils.GetLockAndExpire(lock, time.Second*5)
+	locked := utils.RedisLock(lock, uuid.New().String(), time.Second*10)
+	//locked := utils.GetLockAndExpire(lock, time.Second*5)
 	if !locked {
 		ctx.JSON(http.StatusOK, common.OfFail(common.UploadedFail))
 		return
