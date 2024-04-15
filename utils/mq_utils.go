@@ -16,6 +16,7 @@ func SendSync(topic string, body []byte) {
 	res, err := (*common.Producer).SendSync(context.Background(), message)
 	if err != nil {
 		fmt.Printf("send message error: %s\n", err)
+		return
 	}
 	fmt.Printf("send message success: result=%s\n", res.String())
 }
